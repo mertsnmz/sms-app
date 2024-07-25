@@ -16,8 +16,13 @@ class MobileController extends Controller
     {
         $this->logSmsService = new LogSmsService(new LogSmsRepository());
         parent::__construct($id, $module, $config);
+
+        date_default_timezone_set('Australia/Melbourne');
     }
 
+    /**
+     * @throws Exception
+     */
     public function actionPopulateRandomData(): void
     {
         $totalRows = 1000000 + 50000;

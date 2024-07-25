@@ -33,14 +33,15 @@ class LogSmsRepository
     public function getMessagesToSend(string $currentTimeStr): array
     {
         return Yii::$app->db->createCommand("
-            SELECT id, phone, message, time_zone
-            FROM logs_sms
-            WHERE status = 0
-            AND provider = 'inhousesms'
-            AND send_after <= :currentTime
-            ORDER BY id ASC
-            LIMIT 5
-        ", [':currentTime' => $currentTimeStr])->queryAll();
+        SELECT id, phone, message, time_zone
+        FROM logs_sms
+        WHERE status = 0
+        AND provider = 'inhousesms'
+        AND send_after <= CONVERT_TZ(:currentTime, 'Australia/Melbourne', time_zone)
+        AND HOUR(CONVERT_TZ(:currentTime, 'Australia/Melbourne', time_zone)) BETWEEN 9 AND 23
+        ORDER BY id ASC
+        LIMIT 5
+    ", [':currentTime' => $currentTimeStr])->queryAll();
     }
 
     /**
