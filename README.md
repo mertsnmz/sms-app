@@ -12,7 +12,7 @@ This project is designed to send SMS messages during specific periods of the day
 ## Installation
 
 ### 1. Clone the Repository
-git clone git@github.com:mertsnmz/sms-app.git
+git clone https://github.com/mertsnmz/sms-app.git
 cd sms-app
 
 ### 2. Install Dependencies
