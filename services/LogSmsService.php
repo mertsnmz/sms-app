@@ -16,6 +16,9 @@ class LogSmsService
         $this->logSmsRepository = $logSmsRepository;
     }
 
+    /**
+     * @throws Exception
+     */
     public function populateRandomData(int $totalRows, int $batchSize): void
     {
         $this->logSmsRepository->truncateTable();
@@ -37,7 +40,12 @@ class LogSmsService
                 $phone = '04' . str_pad(rand(0, 999999999), 8, '0', STR_PAD_LEFT);
                 $message = substr(str_shuffle(str_repeat($x = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ', ceil(255 / strlen($x)))), 1, rand(100, 255));
                 $timeZone = $timeZones[array_rand($timeZones)];
-                $sendAfter = $status === 0 ? date('Y-m-d H:i:s', rand(strtotime('-2 hours'), strtotime('+2 days'))) : null;
+                $sendAfter = null;
+                if ($status === 0) {
+                    $dateTime = new DateTime('now', new DateTimeZone($timeZone));
+                    $dateTime->setTimestamp(rand($dateTime->getTimestamp() - 7200, $dateTime->getTimestamp() + 172800));
+                    $sendAfter = $dateTime->format('Y-m-d H:i:s');
+                }
 
                 $batchData[] = [
                     'parent_table' => null,
@@ -83,26 +91,16 @@ class LogSmsService
      */
     public function getMessagesToSend(): array
     {
-        $currentTime = new DateTime('now', new \DateTimeZone('Australia/Melbourne'));
+        $currentTime = new DateTime('now', new DateTimeZone('Australia/Melbourne'));
         $currentTimeStr = $currentTime->format('Y-m-d H:i:s');
 
         $rows = $this->logSmsRepository->getMessagesToSend($currentTimeStr);
 
-        $messagesToSend = [];
-        foreach ($rows as $row) {
-            $timeZone = new DateTimeZone($row['time_zone']);
-            $currentLocalTime = new DateTime('now', $timeZone);
-
-            if ($currentLocalTime->format('H') >= 9 && $currentLocalTime->format('H') <= 23) {
-                $messagesToSend[] = $row;
-            }
-        }
-
-        if (!empty($messagesToSend)) {
-            $idsToUpdate = array_column($messagesToSend, 'id');
+        if (!empty($rows)) {
+            $idsToUpdate = array_column($rows, 'id');
             $this->logSmsRepository->updateMessageStatus($idsToUpdate);
 
-            return $messagesToSend;
+            return $rows;
         } else {
             return [];
         }
